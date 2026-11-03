@@ -246,6 +246,10 @@ details[open].card summary::after{content:"−"}
 .toggle label{min-width:0}
 .toggle label small{color:var(--muted);font-size:.76rem;display:block;font-weight:400}
 .toggle input{flex:0 0 auto;width:20px;height:20px;accent-color:var(--accent)}
+.pace{color:var(--warn)}
+.pace.ok{color:var(--ok)}
+.bydate{font-size:.78rem;color:var(--muted)}
+.bydate input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-width:0}
 </style>
 </head>
 <body>
@@ -370,8 +374,9 @@ details[open].card summary::after{content:"−"}
       </div>
       <div class="row">
         <label class="f"><span class="lbl">Saved in jar</span><select id="g-jar"></select></label>
-        <label class="f"><span class="lbl">Plan per month (optional)</span><input class="money" id="g-plan" inputmode="numeric" autocomplete="off" placeholder="0"></label>
+        <label class="f"><span class="lbl">Reach by (optional)</span><input type="month" id="g-by"></label>
       </div>
+      <p class="hint" id="g-plan-hint"></p>
       <button class="primary" type="submit">Create goal</button>
     </form>
     <div class="items" id="goals"></div>
@@ -649,6 +654,16 @@ function syncSpendFieldsBase(){
   if(CATS[jar])fillSelect($("sp-cat"),CATS[jar].map(c=>[c,c]),true);
 }
 
+function monthsUntil(ym){
+  if(!ym)return 0;const cur=monthOf(today());if(ym<=cur)return 1;
+  let m=cur,n=0;while(m<ym){n++;m=shiftMonth(m,1)}return Math.max(1,n);
+}
+function goalPlan(g){
+  const left=Math.max(0,g.target-goalSaved(g));
+  if(g.by)return Math.ceil(left/monthsUntil(g.by));
+  return g.plan||0;
+}
+function goalSetAside(g,m){return txs.filter(t=>t.kind==="goal"&&t.goal===g.id&&monthOf(t.date)===m).reduce((a,t)=>a+t.amount,0)}
 function renderGoals(bal){
   const box=$("goals");box.innerHTML="";
   if(!goals.length){box.innerHTML='<div class="empty">No goals yet. Add one, like an emergency fund of 3 months of essentials.</div>';$("g-note").textContent="";return;}
@@ -656,16 +671,31 @@ function renderGoals(bal){
   goals.slice().sort((a,b)=>(a.created||0)-(b.created||0)).forEach(g=>{
     const saved=goalSaved(g),pct=g.target>0?Math.min(1,saved/g.target):0,left=Math.max(0,g.target-saved);
     earmarked[g.jar]=(earmarked[g.jar]||0)+saved;
-    const rate=g.plan>0?g.plan:avgMonthly(t=>t.kind==="goal"&&t.goal===g.id);
-    const eta=left<=0?"Goal reached 🎉":rate>0?"Done in "+etaText(left/rate):"Add money to see a finish date";
+    const need=goalPlan(g),setM=goalSetAside(g,monthOf(today()));
+    const rate=need>0?need:avgMonthly(t=>t.kind==="goal"&&t.goal===g.id);
+    let eta;
+    if(left<=0)eta="Goal reached 🎉";
+    else if(g.by)eta="By "+monthName(g.by)+" · save "+short(need)+"/mo";
+    else if(rate>0)eta="Done in "+etaText(left/rate);
+    else eta="Set a date below to get a monthly plan";
+    // this-month pace line (only when there's a plan and the goal isn't done)
+    let pace="";
+    if(left>0&&need>0){const short2=Math.max(0,need-setM);
+      pace=setM>=need?`This month: ${fmt(setM)} set aside · on track ✓`
+        :`This month: ${fmt(setM)} of ${fmt(need)} · ${fmt(short2)} to stay on pace`;}
     const it=document.createElement("div");it.className="item";it.style.setProperty("--c",COLORS[jarIdx(g.jar)]);
     it.innerHTML=`<div class="item-top"><b></b><span>${fmt(saved)} / ${fmt(g.target)}</span></div>
       <div class="bar"><i style="width:${pct*100}%"></i></div>
       <div class="item-sub"><span>${Math.round(pct*100)}% · ${eta}</span><span></span></div>
-      <div class="item-actions"><div class="inline"><input inputmode="numeric" placeholder="Amount" aria-label="Amount to set aside"><button class="small-btn" data-a="add" type="button">Set aside</button></div><button class="del" data-a="del" type="button">Delete</button></div>`;
+      ${pace?`<div class="item-sub"><span class="pace${setM>=need?" ok":""}">${pace}</span></div>`:""}
+      <div class="item-actions"><div class="inline"><input inputmode="numeric" placeholder="Amount" aria-label="Amount to set aside"><button class="small-btn" data-a="add" type="button">Set aside</button></div>
+      <label class="inline bydate">By <input type="month" data-a="by" aria-label="Reach goal by"></label>
+      <button class="del" data-a="del" type="button">Delete</button></div>`;
     it.querySelector("b").textContent=g.name;
-    it.querySelector(".item-sub span:last-child").textContent="From "+jarName(g.jar)+(g.plan?" · plan "+fmt(g.plan)+"/mo":"");
-    const inp=it.querySelector("input");
+    it.querySelector(".item-sub span:last-child").textContent="From "+jarName(g.jar);
+    const byInp=it.querySelector('[data-a="by"]');byInp.value=g.by||"";byInp.min=monthOf(today());
+    byInp.addEventListener("change",async()=>{try{await patch("goals",g.id,{by:byInp.value||""})}catch(e){alertFail()}});
+    const inp=it.querySelector('input[inputmode="numeric"]');
     it.querySelector('[data-a="add"]').addEventListener("click",async()=>{
       const a=num(inp.value);if(a<=0){inp.focus();return;}
       try{await addTx({kind:"goal",goal:g.id,jar:g.jar,amount:a,date:today(),note:""});inp.value="";}catch(e){alertFail()}
@@ -850,12 +880,21 @@ submit($("f-move"),()=>{
 },r=>"Moved TZS "+fmt(r.amount)+" to "+jarName(r.to)+".");
 
 /* goals & loans forms */
-$("g-new").addEventListener("click",()=>{$("g-form").hidden=!$("g-form").hidden;if(!$("g-form").hidden)$("g-name").focus()});
+$("g-new").addEventListener("click",()=>{$("g-form").hidden=!$("g-form").hidden;if(!$("g-form").hidden){$("g-by").min=monthOf(today());$("g-name").focus();goalPlanHint();}});
 $("d-new").addEventListener("click",()=>{$("d-form").hidden=!$("d-form").hidden;if(!$("d-form").hidden)$("d-name").focus()});
+function goalPlanHint(){
+  const target=num($("g-target").value),by=$("g-by").value;
+  if(target>0&&by){const perMo=Math.ceil(target/monthsUntil(by));
+    $("g-plan-hint").textContent="Save about TZS "+fmt(perMo)+"/month to reach "+fmt(target)+" by "+monthName(by)+".";}
+  else if(target>0)$("g-plan-hint").textContent="Add a date and we'll work out how much to save each month.";
+  else $("g-plan-hint").textContent="";
+}
+$("g-target").addEventListener("input",goalPlanHint);
+$("g-by").addEventListener("change",goalPlanHint);
 $("g-form").addEventListener("submit",async e=>{
   e.preventDefault();const name=$("g-name").value.trim(),target=num($("g-target").value);
   if(!name||target<=0){showGoalNote("Give the goal a name and a target amount.");return;}
-  try{await create("goals",{name,target,jar:$("g-jar").value,plan:num($("g-plan").value),created:Date.now()});$("g-form").reset();$("g-form").hidden=true;}catch(err){showGoalNote("Couldn't save the goal. Try again.")}
+  try{await create("goals",{name,target,jar:$("g-jar").value,by:$("g-by").value||"",plan:0,created:Date.now()});$("g-form").reset();$("g-form").hidden=true;$("g-plan-hint").textContent="";}catch(err){showGoalNote("Couldn't save the goal. Try again.")}
 });
 function showGoalNote(t){$("g-note").textContent=t}
 $("d-form").addEventListener("submit",async e=>{
