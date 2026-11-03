@@ -238,6 +238,14 @@ details[open].card summary::after{content:"−"}
 .cel-actions{display:flex;gap:8px}
 .cel-actions button{flex:1}
 @media (prefers-reduced-motion: reduce){.sheet-card,.cel-card{animation:none}}
+
+.nudge{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.86rem;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.nudge[hidden]{display:none!important}
+.nudge button{border:0;background:none;color:var(--accent);font-weight:600;font-size:.82rem;white-space:nowrap}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+.toggle label{min-width:0}
+.toggle label small{color:var(--muted);font-size:.76rem;display:block;font-weight:400}
+.toggle input{flex:0 0 auto;width:20px;height:20px;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -283,6 +291,7 @@ details[open].card summary::after{content:"−"}
   </section>
 
   <div class="alerts" id="alerts" aria-live="polite"></div>
+  <div class="nudge" id="nudge" hidden></div>
 
   <div class="eyebrow"><span class="lbl">Your jars</span><span class="lbl" id="monthLbl"></span></div>
   <section class="jars" id="jars" aria-label="Jar balances"></section>
@@ -404,7 +413,7 @@ details[open].card summary::after{content:"−"}
   </section>
 
   <section class="card" aria-label="Monthly review">
-    <div class="card-head"><h2>Month check</h2><button class="small-btn" id="rv-go" type="button">Check</button></div>
+    <div class="card-head"><h2>Month check</h2><div class="inline"><button class="small-btn" id="rv-wrap" type="button">Wrapped 🎁</button><button class="small-btn" id="rv-go" type="button">Check</button></div></div>
     <p class="note" id="rv-note">Reads the month you're viewing and tells you what went well and what to adjust.</p>
     <div class="review" id="rv-out" hidden></div>
   </section>
@@ -426,6 +435,9 @@ details[open].card summary::after{content:"−"}
     <label class="f"><span class="lbl">Repeat PIN</span><input id="pin-rep" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></label></div>
     <div class="row"><button class="small-btn" id="pin-set" type="button">Save PIN</button><button class="small-btn" id="pin-off" type="button" hidden>Remove PIN</button></div>
     <p class="msg" id="pin-msg"></p>
+    <div class="lbl" style="margin-top:4px">Rewards</div>
+    <div class="toggle"><label for="set-sound">Sound on unlock<small>A short chime when you earn a reward</small></label><input type="checkbox" id="set-sound"></div>
+    <div class="toggle"><label for="set-remind">Remind me to log<small>A gentle nudge if you go a week without logging</small></label><input type="checkbox" id="set-remind"></div>
     <div class="lbl" style="margin-top:4px">Backup</div>
     <p class="note">Your data lives only on this phone. Export a backup now and then (save it to Google Drive or WhatsApp yourself) so you never lose it.</p>
     <div class="row"><button class="small-btn" id="bk-export" type="button">Export backup</button><label class="small-btn" style="text-align:center;cursor:pointer">Import backup<input type="file" id="bk-import" accept="application/json,.json" hidden></label></div>
@@ -476,7 +488,7 @@ const DEFAULTS={salary:1200000,jars:[
 const LKEY="salary-jars-v3";
 let settings=JSON.parse(JSON.stringify(DEFAULTS));
 let txs=[],goals=[],debts=[];
-let game={seen:[],init:0,muted:false};
+let game={seen:[],init:0,muted:false,sound:true,remind:0,lastNotify:""};
 let mode="loading",store=null;
 let viewMonth=monthOf(today());
 
@@ -525,7 +537,7 @@ async function init(){
   const db=null;
   if(!db){mode="local";loadLocal();
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
-    setSync("on","Saved on this phone");render();return;}
+    setSync("on","Saved on this phone");render();maybeNotify();return;}
   store=db;mode="db";
   const timer=setTimeout(()=>setSync("warn","Can't reach your saved data yet"),10000);
   const got={set:false,tx:false,goals:false,debts:false};
@@ -621,7 +633,7 @@ function render(){
   if(!built||!settingsDirty)renderSettings();
   built=true;
   renderGoals(bal);renderDebts();renderMonth();renderChart();
-  renderRewards(bal);syncMilestones(bal);
+  renderRewards(bal);renderNudge();renderGameSettings();syncMilestones(bal);
 }
 function daysLeft(){const d=new Date();return new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()}
 function renderSplit(){
@@ -1146,7 +1158,7 @@ function nextCelebration(){
   $("celIc").textContent=a.icon;$("celTitle").textContent=a.title;$("celDesc").textContent=a.desc;
   $("celShare").dataset.t=a.title;$("celebrate").hidden=false;
   if(navigator.vibrate)navigator.vibrate([40,40,80]);
-  startConfetti();
+  playChime();startConfetti();
 }
 $("celNext").addEventListener("click",nextCelebration);
 $("celShare").addEventListener("click",()=>{
@@ -1176,6 +1188,89 @@ function startConfetti(){
 }
 function stopConfetti(){cancelAnimationFrame(confA);const c=$("confetti");if(!c)return;
   const ctx=c.getContext("2d");if(ctx)ctx.clearRect(0,0,c.width,c.height);c.hidden=true;}
+
+/* ---------- unlock sound ---------- */
+function playChime(){
+  if(game.sound===false)return;
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const ac=new AC();
+    [523.25,659.25,783.99,1046.5].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();
+      o.type="triangle";o.frequency.value=f;const t=ac.currentTime+i*0.09;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+0.02);g.gain.exponentialRampToValueAtTime(.0001,t+0.4);
+      o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+0.42);});
+    setTimeout(()=>{try{ac.close()}catch(e){}},1300);
+  }catch(e){}
+}
+
+/* ---------- monthly "wrapped" share card ---------- */
+function wrappedData(m){
+  const {inn,out,cats}=monthStats(m),{bal}=balances();
+  const kept=inn-out,rate=inn>0?Math.round(kept/inn*100):0;
+  const ce=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  return {m,inn,out,kept,rate,top:ce[0],streak:savingsStreak(),level:levelOf(gstats(bal).productive)};
+}
+function buildWrapped(m){
+  const d=wrappedData(m),W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,"#0f2a26");g.addColorStop(1,"#0a3f36");x.fillStyle=g;x.fillRect(0,0,W,H);
+  const rg=x.createRadialGradient(W-150,180,20,W-150,180,460);rg.addColorStop(0,"rgba(60,196,174,.4)");rg.addColorStop(1,"rgba(60,196,174,0)");x.fillStyle=rg;x.fillRect(0,0,W,H);
+  x.fillStyle="#9cb8b1";x.font="600 34px 'IBM Plex Sans',sans-serif";x.fillText("MY MONEY MONTH",80,150);
+  x.fillStyle="#eef6f3";x.font="700 82px Sora,sans-serif";x.fillText(monthName(d.m),80,246);
+  x.fillStyle="#9cb8b1";x.font="600 34px 'IBM Plex Sans',sans-serif";x.fillText("I KEPT",80,410);
+  x.fillStyle="#3cc4ae";x.font="700 140px 'IBM Plex Mono',monospace";x.fillText("TZS "+short(d.kept),80,548);
+  x.fillStyle="#eef6f3";x.font="600 40px 'IBM Plex Sans',sans-serif";x.fillText("that's "+d.rate+"% of what came in",80,614);
+  const rows=[["Money in","TZS "+short(d.inn)],["Spent","TZS "+short(d.out)]];
+  if(d.top)rows.push(["Biggest cost",d.top[0]+" ("+short(d.top[1])+")"]);
+  rows.push(["Saving streak",d.streak+" month"+(d.streak===1?"":"s")+"  🔥"]);
+  rows.push(["Level",d.level.lvl+" · "+d.level.title+"  "+d.level.icon]);
+  let yy=742;x.font="600 40px 'IBM Plex Sans',sans-serif";
+  rows.forEach(r=>{x.textAlign="left";x.fillStyle="#9cb8b1";x.fillText(r[0],80,yy);
+    x.textAlign="right";x.fillStyle="#eef6f3";x.fillText(r[1],W-80,yy);
+    x.strokeStyle="rgba(255,255,255,.08)";x.lineWidth=2;x.beginPath();x.moveTo(80,yy+32);x.lineTo(W-80,yy+32);x.stroke();yy+=104;});
+  x.textAlign="left";x.fillStyle="#3cc4ae";x.font="700 46px Sora,sans-serif";x.fillText("Salary Jars",80,H-92);
+  x.fillStyle="#9cb8b1";x.font="500 30px 'IBM Plex Sans',sans-serif";x.fillText("Split your salary. Watch it grow.",80,H-46);
+  return c;
+}
+async function shareWrapped(m){
+  if(!txs.some(t=>monthOf(t.date)===m)){showMsg("Nothing recorded in "+monthName(m)+" to share yet.","bad");return;}
+  try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;}catch(e){}
+  const c=buildWrapped(m),text="My "+monthName(m)+" with Salary Jars 💰";
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+  if(blob&&navigator.canShare){const file=new File([blob],"salary-jars-"+m+".png",{type:"image/png"});
+    if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text});return;}catch(e){if(e&&e.name==="AbortError")return;}}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="salary-jars-"+m+".png";document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  showMsg("Saved your month card to downloads — share it anywhere 🎉","good");
+}
+$("rv-wrap").addEventListener("click",()=>shareWrapped(viewMonth));
+
+/* ---------- log reminder ---------- */
+function daysSinceLastLog(){
+  const last=txs.reduce((m,t)=>t.date&&t.date>m?t.date:m,"");
+  if(!last)return -1;return Math.floor((Date.parse(today())-Date.parse(last))/86400000);
+}
+function renderNudge(){
+  const el=$("nudge");if(!el)return;const days=daysSinceLastLog();
+  if(!game.remind||days<7){el.hidden=true;return;}
+  el.hidden=false;el.innerHTML="";
+  const s=document.createElement("span");s.textContent="It's been "+days+" days since you logged money. Keep your streak alive 🔥";
+  const b=document.createElement("button");b.type="button";b.textContent="Log now";
+  b.addEventListener("click",()=>{openTab("spend");$("recordCard").scrollIntoView({behavior:"smooth",block:"start"})});
+  el.append(s,b);
+}
+function maybeNotify(){
+  if(!game.remind||!("Notification"in window)||Notification.permission!=="granted")return;
+  if(daysSinceLastLog()>=7&&game.lastNotify!==today()){game.lastNotify=today();saveLocal();
+    try{new Notification("Salary Jars",{body:"It's been a week — log your spending to keep your streak 🔥",icon:"icon-192.png"})}catch(e){}}
+}
+function renderGameSettings(){
+  if(!$("set-sound"))return;
+  $("set-sound").checked=game.sound!==false;$("set-remind").checked=!!game.remind;
+}
+$("set-sound").addEventListener("change",()=>{game.sound=$("set-sound").checked;saveLocal();});
+$("set-remind").addEventListener("change",async()=>{
+  game.remind=$("set-remind").checked?1:0;saveLocal();renderNudge();
+  if(game.remind&&"Notification"in window&&Notification.permission==="default"){try{await Notification.requestPermission()}catch(e){}}
+});
 
 /* ---------- install & offline ---------- */
 let deferredPrompt=null;
