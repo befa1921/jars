@@ -251,8 +251,9 @@ details[open].card summary::after{content:"−"}
 .bydate{font-size:.78rem;color:var(--muted)}
 .bydate input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-width:0}
 
-#onboard{position:fixed;inset:0;z-index:95;background:var(--hero);color:var(--hero-ink);display:flex;align-items:center;justify-content:center;
-  padding:env(safe-area-inset-top,0px) max(20px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(20px,env(safe-area-inset-left,0px))}
+#onboard{position:fixed;inset:0;z-index:95;background:var(--hero);color:var(--hero-ink);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;
+  padding:max(32px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(32px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+.ob-card{margin-block:auto}
 #onboard[hidden]{display:none!important}
 .ob-card{width:100%;max-width:400px;display:flex;flex-direction:column}
 .ob-step{display:flex;flex-direction:column;gap:14px;animation:pop .3s ease}
@@ -1376,7 +1377,9 @@ const OB_PRESETS=[["Balanced","55,5,10,15,15"],["Starter","65,5,10,10,10"],["No 
 let obSplit="55,5,10,15,15";
 function obShow(step){document.querySelectorAll("#onboard .ob-step").forEach(el=>el.hidden=el.dataset.s!==String(step))}
 function maybeOnboard(){
-  if(game.onboarded||txs.length){$("onboard").hidden=true;return;}
+  // anyone who already has data or a PIN is an existing user — never onboard them
+  if(!game.onboarded&&(txs.length||goals.length||debts.length||getPin())){game.onboarded=1;saveLocal();}
+  if(game.onboarded){$("onboard").hidden=true;return;}
   $("onboard").hidden=false;obShow(1);$("ob-salary").value=settings.salary?fmt(settings.salary):"";
 }
 function obRenderPresets(){
@@ -1392,7 +1395,7 @@ function obRenderSplit(){
     r.querySelector("span:nth-child(2)").textContent=j.name;box.appendChild(r)});
 }
 $("ob-1next").addEventListener("click",()=>{const s=num($("ob-salary").value);if(s<=0){$("ob-salary").focus();return;}
-  settings.salary=s;obRenderPresets();obRenderSplit();obShow(2)});
+  settings.salary=s;saveLocal();obRenderPresets();obRenderSplit();obShow(2)});
 $("ob-back").addEventListener("click",()=>obShow(1));
 $("ob-2next").addEventListener("click",()=>{const pcts=obSplit.split(",").map(Number);
   settings.jars=settings.jars.map((j,i)=>({id:j.id,name:j.name,pct:pcts[i]}));obShow(3)});
