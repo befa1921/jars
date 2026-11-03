@@ -185,6 +185,59 @@ details[open].card summary::after{content:"−"}
 .keypad .ghostk{border:0;background:none;font-family:var(--body);font-size:.85rem}
 .lockmsg{font-size:.85rem;color:var(--hero-muted);min-height:1.2em;text-align:center;max-width:280px}
 @media (prefers-reduced-motion: reduce){.pindots.shake{animation:none}}
+
+/* ---- rewards / gamification ---- */
+.level{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .2s}
+.level:hover{border-color:var(--accent)}
+.level-top{display:flex;align-items:center;gap:12px}
+.lvl-badge{flex:0 0 auto;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.4rem;background:linear-gradient(135deg,var(--accent),var(--j1));box-shadow:0 4px 14px var(--glow)}
+.lvl-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.lvl-name{font-family:var(--display);font-weight:700;font-size:.98rem;display:flex;align-items:baseline;gap:8px}
+.lvl-name small{font-weight:500;color:var(--muted);font-family:var(--body);font-size:.75rem}
+.streak{margin-left:auto;align-self:flex-start;font-weight:700;font-size:.82rem;color:var(--warn);white-space:nowrap}
+.streak.off{color:var(--muted);font-weight:500}
+.xp{height:9px;border-radius:99px;background:var(--soft);overflow:hidden}
+.xp i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--j1));transition:width .6s ease}
+.xp-sub{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.badges{display:flex;gap:7px;align-items:center;overflow-x:auto;padding-bottom:2px}
+.badge{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:1.15rem;background:var(--soft);border:1px solid var(--line)}
+.badge.locked{filter:grayscale(1);opacity:.4}
+.badge-more{flex:0 0 auto;border:1px dashed var(--line);background:none;color:var(--muted);border-radius:11px;height:38px;padding:0 12px;font-size:.78rem;font-weight:600;white-space:nowrap}
+
+.sheet{position:fixed;inset:0;z-index:60;background:rgba(6,16,14,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none!important}
+.sheet-card{background:var(--surface);color:var(--ink);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto;animation:rise .28s ease}
+@keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sheet-head h2{font-size:1.1rem}
+.x{border:0;background:var(--soft);border-radius:50%;width:32px;height:32px;font-size:.95rem;color:var(--muted)}
+#rwSummary{margin:0 0 6px}
+.ach{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.ach:first-child{border-top:0}
+.ach .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:1.25rem;background:var(--soft)}
+.ach.on .ic{background:linear-gradient(135deg,var(--accent),var(--j1))}
+.ach.off{opacity:.65}
+.ach-main{min-width:0}
+.ach-main b{font-weight:600;font-size:.92rem;display:block}
+.ach-main small{color:var(--muted);font-size:.78rem}
+.ach-main .mini{height:5px;border-radius:99px;background:var(--soft);margin-top:5px;overflow:hidden}
+.ach-main .mini i{display:block;height:100%;background:var(--accent)}
+.ach-tick{font-size:1.1rem;color:var(--ok);white-space:nowrap}
+.ach-tick.lock{color:var(--muted);font-size:.78rem;font-family:var(--mono)}
+
+#celebrate{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(6,16,14,.6);padding:24px}
+#celebrate[hidden]{display:none!important}
+#confetti{position:fixed;inset:0;z-index:85;pointer-events:none}
+#confetti[hidden]{display:none!important}
+.cel-card{background:var(--surface);border-radius:20px;padding:26px 22px;text-align:center;max-width:320px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:pop .4s cubic-bezier(.2,1.3,.5,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.cel-ic{font-size:3.4rem;line-height:1}
+.cel-card h2{font-size:1.25rem;margin:12px 0 4px}
+.cel-card p{color:var(--muted);font-size:.9rem;margin:0 0 16px}
+.cel-badge{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.cel-actions{display:flex;gap:8px}
+.cel-actions button{flex:1}
+@media (prefers-reduced-motion: reduce){.sheet-card,.cel-card{animation:none}}
 </style>
 </head>
 <body>
@@ -214,6 +267,19 @@ details[open].card summary::after{content:"−"}
     <small id="heroNote">Tap Payday below to fill your jars.</small>
     <div class="stack" id="stack" aria-hidden="true"></div>
     <div class="stack-legend" id="stackLegend"></div>
+  </section>
+
+  <section class="level" id="levelCard" aria-label="Your progress and rewards" role="button" tabindex="0">
+    <div class="level-top">
+      <div class="lvl-badge" id="lvlIcon">🌱</div>
+      <div class="lvl-meta">
+        <div class="lvl-name"><span id="lvlName">Level 1</span><small id="lvlTitle">Seedling</small></div>
+        <div class="xp"><i id="xpBar" style="width:0%"></i></div>
+        <div class="xp-sub"><span id="xpNow">Save to level up</span><span id="xpNext"></span></div>
+      </div>
+      <span class="streak off" id="streak">🔥 0</span>
+    </div>
+    <div class="badges" id="badges"></div>
   </section>
 
   <div class="alerts" id="alerts" aria-live="polite"></div>
@@ -373,6 +439,27 @@ details[open].card summary::after{content:"−"}
   <button type="button" data-go="move"><span>⇄</span>Move</button>
 </div></nav>
 
+<div class="sheet" id="rewards" hidden role="dialog" aria-label="Your rewards">
+  <div class="sheet-card">
+    <div class="sheet-head"><h2>Your rewards</h2><button class="x" id="rwClose" type="button" aria-label="Close">✕</button></div>
+    <p class="note" id="rwSummary"></p>
+    <div id="rwList"></div>
+  </div>
+</div>
+<canvas id="confetti" hidden aria-hidden="true"></canvas>
+<div id="celebrate" hidden role="dialog" aria-label="Milestone unlocked">
+  <div class="cel-card">
+    <div class="cel-ic" id="celIc">🎉</div>
+    <div class="cel-badge" id="celKicker">Milestone unlocked</div>
+    <h2 id="celTitle"></h2>
+    <p id="celDesc"></p>
+    <div class="cel-actions">
+      <button class="small-btn" id="celShare" type="button">Share 🎉</button>
+      <button class="primary" id="celNext" type="button">Nice!</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const COLORS=["var(--j1)","var(--j2)","var(--j3)","var(--j4)","var(--j5)"];
 const IDS=["ess","fun","debt","short","long"];
@@ -389,6 +476,7 @@ const DEFAULTS={salary:1200000,jars:[
 const LKEY="salary-jars-v3";
 let settings=JSON.parse(JSON.stringify(DEFAULTS));
 let txs=[],goals=[],debts=[];
+let game={seen:[],init:0,muted:false};
 let mode="loading",store=null;
 let viewMonth=monthOf(today());
 
@@ -409,8 +497,8 @@ const debtById=id=>debts.find(d=>d.id===id);
 
 /* ---------- storage ---------- */
 let rules={};
-function loadLocal(){try{const s=JSON.parse(localStorage.getItem(LKEY)||"null");if(s){if(s.settings)settings=s.settings;txs=s.txs||[];goals=s.goals||[];debts=s.debts||[];rules=s.rules||{};}}catch(e){}}
-function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify({settings,txs,goals,debts,rules}))}catch(e){}}
+function loadLocal(){try{const s=JSON.parse(localStorage.getItem(LKEY)||"null");if(s){if(s.settings)settings=s.settings;txs=s.txs||[];goals=s.goals||[];debts=s.debts||[];rules=s.rules||{};if(s.game)game=s.game;}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify({settings,txs,goals,debts,rules,game}))}catch(e){}}
 const lid=()=>"l"+Date.now()+Math.random().toString(36).slice(2,6);
 const LISTS={tx:()=>txs,goals:()=>goals,debts:()=>debts};
 async function create(col,data){
@@ -533,6 +621,7 @@ function render(){
   if(!built||!settingsDirty)renderSettings();
   built=true;
   renderGoals(bal);renderDebts();renderMonth();renderChart();
+  renderRewards(bal);syncMilestones(bal);
 }
 function daysLeft(){const d=new Date();return new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()}
 function renderSplit(){
@@ -729,7 +818,7 @@ submit($("f-payday"),()=>{
   if(already&&!$("pd-go").dataset.confirm){$("pd-go").dataset.confirm="1";$("pd-go").textContent="Tap again to record a second payday";setTimeout(()=>{$("pd-go").dataset.confirm="";$("pd-go").textContent="Split into jars"},4000);return "Payday for "+monthName(monthOf(d))+" is already recorded.";}
   $("pd-go").dataset.confirm="";$("pd-go").textContent="Split into jars";
   return {kind:"payday",date:d,amount:a,alloc:splitAmount(a),note:""};
-},r=>"Done. TZS "+fmt(r.amount)+" split into your jars. Now move the money to match.");
+},r=>{setTimeout(()=>{if(typeof startConfetti==="function")startConfetti()},120);return "Done. TZS "+fmt(r.amount)+" split into your jars. Now move the money to match.";});
 submit($("f-spend"),()=>{
   const a=num($("sp-amt").value),jar=$("sp-jar").value;if(a<=0)return "Enter how much you spent.";
   const t={kind:"spend",date:$("sp-date").value||today(),amount:a,jar,note:$("sp-note").value.trim()};
@@ -797,7 +886,7 @@ $("rv-go").addEventListener("click",()=>{
 
 /* ---------- backup ---------- */
 $("bk-export").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({app:"salary-jars",version:4,exported:new Date().toISOString(),settings,txs,goals,debts,rules},null,1)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"salary-jars",version:5,exported:new Date().toISOString(),settings,txs,goals,debts,rules,game},null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="salary-jars-backup-"+today()+".json";document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
   $("bk-msg").textContent="Backup saved to your downloads.";$("bk-msg").className="msg good";
@@ -805,7 +894,7 @@ $("bk-export").addEventListener("click",()=>{
 $("bk-import").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
   try{const d=JSON.parse(await f.text());if(!d||d.app!=="salary-jars"||!Array.isArray(d.txs))throw 0;
-    settings=d.settings||settings;txs=d.txs;goals=d.goals||[];debts=d.debts||[];rules=d.rules||rules;saveLocal();settingsDirty=false;render();
+    settings=d.settings||settings;txs=d.txs;goals=d.goals||[];debts=d.debts||[];rules=d.rules||rules;if(d.game)game=d.game;saveLocal();settingsDirty=false;render();
     $("bk-msg").textContent="Backup restored: "+txs.length+" entries.";$("bk-msg").className="msg good";}
   catch(err){$("bk-msg").textContent="That file isn't a Salary Jars backup.";$("bk-msg").className="msg bad"}
   e.target.value="";
@@ -921,7 +1010,7 @@ function dots(){[...$("pinDots").children].forEach((d,i)=>d.classList.toggle("on
 function showLock(){if(!getPin()){$("lock").hidden=true;lockDone=true;return;}entry="";dots();$("lockMsg").textContent="Enter your PIN";$("lock").hidden=false;lockDone=false;}
 async function tryPin(){
   const p=getPin();if(!p){$("lock").hidden=true;return;}
-  if(await hashPin(entry,p.salt)===p.hash){$("lock").hidden=true;lockDone=true;entry="";dots();}
+  if(await hashPin(entry,p.salt)===p.hash){$("lock").hidden=true;lockDone=true;entry="";dots();render();}
   else{entry="";dots();const d=$("pinDots");d.classList.remove("shake");void d.offsetWidth;d.classList.add("shake");$("lockMsg").textContent="Wrong PIN. Try again.";if(navigator.vibrate)navigator.vibrate(120);}
 }
 $("keypad").addEventListener("click",e=>{
@@ -947,6 +1036,146 @@ $("pin-off").addEventListener("click",()=>{
   try{localStorage.removeItem(PKEY)}catch(e){}offArmed=false;$("pin-msg").textContent="PIN removed.";$("pin-msg").className="msg";renderPinSettings();
 });
 renderPinSettings();showLock();
+
+/* ---------- rewards & milestones ---------- */
+const LTITLES=["Seedling","Saver","Builder","Planner","Strategist","Investor","Boss","Mogul","Tycoon","Legend"];
+const LICONS=["🌱","💰","🏗️","🗺️","♟️","📈","🧑‍💼","🏢","💠","👑"];
+const LSTEPS=[0,50000,150000,300000,600000,1000000,1800000,3000000,5000000,8000000];
+function gstats(bal){
+  const saved=Math.max(0,bal.short||0)+Math.max(0,bal.long||0);
+  const loansLeft=debts.reduce((a,d)=>a+Math.max(0,debtLeft(d)),0);
+  const net=IDS.reduce((a,id)=>a+(bal[id]||0),0)-loansLeft;
+  const debtPaid=txs.filter(t=>t.kind==="spend"&&t.jar==="debt").reduce((a,t)=>a+t.amount,0);
+  return {saved,loansLeft,net,debtPaid,productive:saved+debtPaid};
+}
+function levelOf(p){
+  let i=0;while(i<LSTEPS.length-1&&p>=LSTEPS[i+1])i++;
+  const base=LSTEPS[i],next=LSTEPS[i+1]||null;
+  const extra=next===null?Math.floor((p-base)/5000000):0;
+  return {lvl:i+1+extra,next,pct:next?Math.min(1,(p-base)/(next-base)):1,
+    title:LTITLES[Math.min(i,LTITLES.length-1)],icon:LICONS[Math.min(i,LICONS.length-1)]};
+}
+function savedByMonth(){
+  const map={};
+  txs.forEach(t=>{const m=monthOf(t.date);if(!m)return;const e=map[m]||(map[m]={inn:0,out:0});
+    if(t.kind==="payday"||t.kind==="add")e.inn+=t.amount;else if(t.kind==="spend")e.out+=t.amount;});
+  return map;
+}
+function savingsStreak(){
+  const map=savedByMonth(),good=x=>x&&x.inn>0&&x.inn>=x.out;
+  let m=monthOf(today()),n=0;
+  if(!good(map[m]))m=shiftMonth(m,-1);
+  while(good(map[m])){n++;m=shiftMonth(m,-1);}
+  return n;
+}
+function achList(bal){
+  const s=gstats(bal),streak=savingsStreak();
+  const payCount=txs.filter(t=>t.kind==="payday").length;
+  const monthsLogged=new Set(txs.map(t=>monthOf(t.date)).filter(Boolean)).size;
+  const goalsDone=goals.filter(g=>g.target>0&&goalSaved(g)>=g.target).length;
+  const loanCleared=debts.some(d=>d.original>0&&debtLeft(d)<=0);
+  const essPct=(settings.jars.find(j=>j.id==="ess")||{}).pct||0;
+  const essBudget=(settings.salary||0)*essPct/100;
+  const def=[
+    ["first-pay","🌱","First payday","Split your first salary into jars",payCount>=1],
+    ["save-100k","💰","100K club","Reach TZS 100,000 saved",s.saved>=1e5,s.saved,1e5],
+    ["save-500k","💎","Half a million","Reach TZS 500,000 saved",s.saved>=5e5,s.saved,5e5],
+    ["save-1m","🏆","Millionaire jar","Reach TZS 1,000,000 saved",s.saved>=1e6,s.saved,1e6],
+    ["goal-1","🎯","Goal getter","Reach your first savings goal",goalsDone>=1],
+    ["debt-free","🧨","Debt slayer","Clear a whole loan",loanCleared],
+    ["emergency","🛡️","Safety net","Save 3 months of essentials",essBudget>0&&s.saved>=essBudget*3,s.saved,essBudget*3],
+    ["streak-3","🔥","On a roll","Keep money 3 months straight",streak>=3,streak,3],
+    ["streak-6","🚀","Half-year hero","6-month saving streak",streak>=6,streak,6],
+    ["streak-12","👑","Year of discipline","12-month saving streak",streak>=12,streak,12],
+    ["consistent","📒","Consistent","Track money in 3 months",monthsLogged>=3,monthsLogged,3],
+    ["net-green","📈","In the green","Net worth above zero",s.net>0&&payCount>=1],
+  ];
+  return def.map(a=>({id:a[0],icon:a[1],title:a[2],desc:a[3],done:!!a[4],cur:a[5],goal:a[6]}));
+}
+function renderRewards(bal){
+  const s=gstats(bal),L=levelOf(s.productive),streak=savingsStreak(),list=achList(bal);
+  $("lvlIcon").textContent=L.icon;$("lvlName").textContent="Level "+L.lvl;$("lvlTitle").textContent=L.title;
+  $("xpBar").style.width=(L.pct*100)+"%";
+  if(L.next){$("xpNow").textContent="TZS "+fmt(s.productive)+" built";$("xpNext").textContent="Next: "+short(L.next);}
+  else{$("xpNow").textContent="Max level · TZS "+fmt(s.productive);$("xpNext").textContent="";}
+  const st=$("streak");st.textContent="🔥 "+streak;st.className="streak"+(streak>0?"":" off");
+  st.title=streak>0?streak+"-month saving streak":"Keep money this month to start a streak";
+  const earned=list.filter(a=>a.done),bb=$("badges");bb.innerHTML="";
+  (earned.length?earned:list).slice(0,7).forEach(a=>{const d=document.createElement("div");
+    d.className="badge"+(a.done?"":" locked");d.textContent=a.icon;d.title=a.title;bb.appendChild(d)});
+  const more=document.createElement("button");more.type="button";more.className="badge-more";
+  more.textContent=earned.length+"/"+list.length+" · View all";
+  more.addEventListener("click",ev=>{ev.stopPropagation();openRewards()});
+  bb.appendChild(more);
+}
+function openRewards(){
+  const {bal}=balances(),list=achList(bal),L=levelOf(gstats(bal).productive),earned=list.filter(a=>a.done).length;
+  $("rwSummary").textContent="Level "+L.lvl+" · "+L.title+" — "+earned+" of "+list.length+" badges earned.";
+  const box=$("rwList");box.innerHTML="";
+  list.slice().sort((a,b)=>(b.done-a.done)).forEach(a=>{
+    const row=document.createElement("div");row.className="ach "+(a.done?"on":"off");
+    const p=a.goal?Math.min(1,(a.cur||0)/a.goal):0;
+    const prog=(!a.done&&a.goal)?`<div class="mini"><i style="width:${p*100}%"></i></div>`:"";
+    row.innerHTML=`<div class="ic">${a.icon}</div><div class="ach-main"><b></b><small></small>${prog}</div>`+
+      (a.done?`<div class="ach-tick">✓</div>`:`<div class="ach-tick lock">${a.goal?Math.round(p*100)+"%":"🔒"}</div>`);
+    row.querySelector("b").textContent=a.title;row.querySelector("small").textContent=a.desc;
+    box.appendChild(row);
+  });
+  $("rewards").hidden=false;
+}
+$("rwClose").addEventListener("click",()=>$("rewards").hidden=true);
+$("rewards").addEventListener("click",e=>{if(e.target.id==="rewards")$("rewards").hidden=true});
+$("levelCard").addEventListener("click",openRewards);
+$("levelCard").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openRewards()}});
+
+let celebrateQ=[];
+function syncMilestones(bal){
+  const list=achList(bal),done=list.filter(a=>a.done);
+  if(!game.init){game.seen=done.map(a=>a.id);game.init=1;saveLocal();return;}
+  if(!lockDone)return;
+  const fresh=done.filter(a=>!game.seen.includes(a.id));
+  if(!fresh.length)return;
+  game.seen=game.seen.concat(fresh.map(a=>a.id));saveLocal();
+  if(game.muted)return;
+  celebrateQ=celebrateQ.concat(fresh);
+  if($("celebrate").hidden)nextCelebration();
+}
+function nextCelebration(){
+  const a=celebrateQ.shift();
+  if(!a){$("celebrate").hidden=true;stopConfetti();return;}
+  $("celIc").textContent=a.icon;$("celTitle").textContent=a.title;$("celDesc").textContent=a.desc;
+  $("celShare").dataset.t=a.title;$("celebrate").hidden=false;
+  if(navigator.vibrate)navigator.vibrate([40,40,80]);
+  startConfetti();
+}
+$("celNext").addEventListener("click",nextCelebration);
+$("celShare").addEventListener("click",()=>{
+  const t=$("celShare").dataset.t||"a milestone";
+  const msg="I just unlocked “"+t+"” in Salary Jars! 💪 Building my savings, one jar at a time.";
+  if(navigator.share)navigator.share({text:msg}).catch(()=>{});
+  else window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+});
+
+/* confetti */
+let confA=null,confP=[];
+function startConfetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const c=$("confetti");c.hidden=false;const ctx=c.getContext("2d");
+  const dpr=Math.min(2,devicePixelRatio||1);c.width=innerWidth*dpr;c.height=innerHeight*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const cols=["#2bb3c0","#e86fa0","#a8c93a","#20a38a","#d24d8f","#f0965a"];
+  confP=Array.from({length:120},()=>({x:Math.random()*innerWidth,y:-20-Math.random()*innerHeight*.4,
+    r:4+Math.random()*5,vy:2+Math.random()*4,vx:-2+Math.random()*4,rot:Math.random()*6,vr:-.2+Math.random()*.4,
+    c:cols[Math.floor(Math.random()*cols.length)]}));
+  const start=performance.now();cancelAnimationFrame(confA);
+  (function loop(now){const t=now-start;ctx.clearRect(0,0,innerWidth,innerHeight);
+    confP.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.rot+=p.vr;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);ctx.restore();});
+    if(t<3200)confA=requestAnimationFrame(loop);else stopConfetti();
+  })(start);
+}
+function stopConfetti(){cancelAnimationFrame(confA);const c=$("confetti");if(!c)return;
+  const ctx=c.getContext("2d");if(ctx)ctx.clearRect(0,0,c.width,c.height);c.hidden=true;}
 
 /* ---------- install & offline ---------- */
 let deferredPrompt=null;
