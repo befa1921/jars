@@ -250,6 +250,28 @@ details[open].card summary::after{content:"−"}
 .pace.ok{color:var(--ok)}
 .bydate{font-size:.78rem;color:var(--muted)}
 .bydate input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-width:0}
+
+#onboard{position:fixed;inset:0;z-index:95;background:var(--hero);color:var(--hero-ink);display:flex;align-items:center;justify-content:center;
+  padding:env(safe-area-inset-top,0px) max(20px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(20px,env(safe-area-inset-left,0px))}
+#onboard[hidden]{display:none!important}
+.ob-card{width:100%;max-width:400px;display:flex;flex-direction:column}
+.ob-step{display:flex;flex-direction:column;gap:14px;animation:pop .3s ease}
+.ob-ic{font-size:3rem;text-align:center;line-height:1}
+.ob-card h2{font-family:var(--display);font-weight:700;font-size:1.4rem;margin:0}
+.ob-card p{color:var(--hero-muted);margin:0;font-size:.92rem;line-height:1.5}
+.ob-card .f .lbl{color:var(--hero-muted)}
+.ob-card .f input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--hero-ink);font-size:1.2rem}
+.ob-card .primary{background:var(--accent);color:var(--on-accent);margin-top:4px}
+.ob-card .ghost{border:0;background:none;color:var(--hero-muted);font-weight:600;padding:6px}
+#ob-presets{display:flex;flex-direction:column;gap:8px}
+.ob-preset{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:var(--hero-ink);border-radius:12px;padding:12px 14px}
+.ob-preset.on{border-color:var(--accent);background:rgba(60,196,174,.15)}
+.ob-preset b{font-weight:600}
+.ob-preset small{color:var(--hero-muted);font-family:var(--mono)}
+.ob-split{display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px}
+.ob-row{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;font-size:.9rem}
+.ob-row .chip{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.ob-row b{font-family:var(--mono)}
 </style>
 </head>
 <body>
@@ -265,6 +287,33 @@ details[open].card summary::after{content:"−"}
   </div>
 </div>
 <script>try{if(localStorage.getItem("salary-jars-pin"))document.getElementById("lock").hidden=false}catch(e){}</script>
+
+<div id="onboard" hidden role="dialog" aria-label="Welcome to Salary Jars">
+  <div class="ob-card">
+    <div class="ob-step" data-s="1">
+      <div class="ob-ic">🫙</div>
+      <h2>Welcome to Salary Jars</h2>
+      <p>Split your income into jars so you always know where your money is. Let's set it up — takes 20 seconds.</p>
+      <label class="f"><span class="lbl">Your usual income (TZS)</span><input class="money" id="ob-salary" inputmode="numeric" autocomplete="off" placeholder="e.g. 1,200,000"></label>
+      <button class="primary" id="ob-1next" type="button">Continue</button>
+    </div>
+    <div class="ob-step" data-s="2" hidden>
+      <h2>Pick your split</h2>
+      <p>How your income divides across the jars. You can fine-tune it anytime in settings.</p>
+      <div id="ob-presets"></div>
+      <div class="ob-split" id="ob-split"></div>
+      <button class="primary" id="ob-2next" type="button">Continue</button>
+      <button class="ghost" id="ob-back" type="button">Back</button>
+    </div>
+    <div class="ob-step" data-s="3" hidden>
+      <div class="ob-ic">🎉</div>
+      <h2>You're all set</h2>
+      <p>Record your first payday now to fill your jars — or do it when your income lands.</p>
+      <button class="primary" id="ob-pay" type="button">Record my payday</button>
+      <button class="ghost" id="ob-skip" type="button">I'll do it later</button>
+    </div>
+  </div>
+</div>
 
 <div class="wrap">
   <div class="top">
@@ -314,7 +363,7 @@ details[open].card summary::after{content:"−"}
 
     <form class="form" id="f-payday">
       <div class="row">
-        <label class="f"><span class="lbl">Salary received (TZS)</span><input class="money" id="pd-amt" inputmode="numeric" autocomplete="off"></label>
+        <label class="f"><span class="lbl">Income received (TZS)</span><input class="money" id="pd-amt" inputmode="numeric" autocomplete="off"></label>
         <label class="f"><span class="lbl">Date</span><input type="date" id="pd-date"></label>
       </div>
       <div class="split" id="pd-split"></div>
@@ -424,8 +473,8 @@ details[open].card summary::after{content:"−"}
   </section>
 
   <details class="card" id="settings">
-    <summary>Jars and salary settings</summary>
-    <label class="f"><span class="lbl">Usual net salary (TZS)</span><input class="money" id="st-salary" inputmode="numeric" autocomplete="off"></label>
+    <summary>Jars and income settings</summary>
+    <label class="f"><span class="lbl">Usual net income (TZS)</span><input class="money" id="st-salary" inputmode="numeric" autocomplete="off"></label>
     <div class="presets">
       <button class="pill" type="button" data-p="55,5,10,15,15">55/5/10/15/15</button>
       <button class="pill" type="button" data-p="65,5,10,10,10">Starter 65/5/10/10/10</button>
@@ -443,6 +492,7 @@ details[open].card summary::after{content:"−"}
     <div class="lbl" style="margin-top:4px">Rewards</div>
     <div class="toggle"><label for="set-sound">Sound on unlock<small>A short chime when you earn a reward</small></label><input type="checkbox" id="set-sound"></div>
     <div class="toggle"><label for="set-remind">Remind me to log<small>A gentle nudge if you go a week without logging</small></label><input type="checkbox" id="set-remind"></div>
+    <button class="small-btn" id="set-invite" type="button" style="align-self:flex-start">Invite a friend 💌</button>
     <div class="lbl" style="margin-top:4px">Backup</div>
     <p class="note">Your data lives only on this phone. Export a backup now and then (save it to Google Drive or WhatsApp yourself) so you never lose it.</p>
     <div class="row"><button class="small-btn" id="bk-export" type="button">Export backup</button><label class="small-btn" style="text-align:center;cursor:pointer">Import backup<input type="file" id="bk-import" accept="application/json,.json" hidden></label></div>
@@ -460,7 +510,15 @@ details[open].card summary::after{content:"−"}
   <div class="sheet-card">
     <div class="sheet-head"><h2>Your rewards</h2><button class="x" id="rwClose" type="button" aria-label="Close">✕</button></div>
     <p class="note" id="rwSummary"></p>
+    <button class="primary" id="rw-invite" type="button" style="width:100%;margin:2px 0 14px">Invite a friend 💌</button>
     <div id="rwList"></div>
+  </div>
+</div>
+<div class="sheet" id="fundGoals" hidden role="dialog" aria-label="Fund your goals">
+  <div class="sheet-card">
+    <div class="sheet-head"><h2>Fund your goals 🎯</h2><button class="x" id="fgClose" type="button" aria-label="Close">✕</button></div>
+    <p class="note">You've just been paid — set aside this month's plan before the money gets spent.</p>
+    <div id="fgList"></div>
   </div>
 </div>
 <canvas id="confetti" hidden aria-hidden="true"></canvas>
@@ -493,7 +551,7 @@ const DEFAULTS={salary:1200000,jars:[
 const LKEY="salary-jars-v3";
 let settings=JSON.parse(JSON.stringify(DEFAULTS));
 let txs=[],goals=[],debts=[];
-let game={seen:[],init:0,muted:false,sound:true,remind:0,lastNotify:""};
+let game={seen:[],init:0,muted:false,sound:true,remind:0,lastNotify:"",onboarded:0,invites:0};
 let mode="loading",store=null;
 let viewMonth=monthOf(today());
 
@@ -542,7 +600,7 @@ async function init(){
   const db=null;
   if(!db){mode="local";loadLocal();
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
-    setSync("on","Saved on this phone");render();maybeNotify();return;}
+    setSync("on","Saved on this phone");render();maybeNotify();maybeOnboard();return;}
   store=db;mode="db";
   const timer=setTimeout(()=>setSync("warn","Can't reach your saved data yet"),10000);
   const got={set:false,tx:false,goals:false,debts:false};
@@ -762,12 +820,12 @@ function renderMonth(){
   ce.forEach(([k,v])=>{const r=document.createElement("div");r.className="cat";r.innerHTML=`<span></span><div class="bar"><i style="width:${v/max*100}%;--c:var(--j1)"></i></div><span>${short(v)}</span>`;r.firstChild.textContent=k;r.firstChild.title=k;cb.appendChild(r)});
   const list=$("list");list.innerHTML="";
   rows.sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.ts||0)-(a.ts||0));
-  if(!rows.length){const e=document.createElement("div");e.className="empty";e.textContent=viewMonth===monthOf(today())?"Nothing recorded this month yet. Start with Payday when your salary lands.":"Nothing recorded in "+monthName(viewMonth)+".";list.appendChild(e);return;}
+  if(!rows.length){const e=document.createElement("div");e.className="empty";e.textContent=viewMonth===monthOf(today())?"Nothing recorded this month yet. Start with Payday when your income lands.":"Nothing recorded in "+monthName(viewMonth)+".";list.appendChild(e);return;}
   rows.forEach(t=>{
     const r=document.createElement("div");r.className="tx";
     let title,sub,cls="",sign="",color="var(--muted)";
     const d=new Date(t.date+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
-    if(t.kind==="payday"){title="Salary split into jars";sub=d;cls="in";sign="+";color="var(--accent)";}
+    if(t.kind==="payday"){title="Income split into jars";sub=d;cls="in";sign="+";color="var(--accent)";}
     if(t.kind==="spend"){const loan=t.debt&&debtById(t.debt);title=t.note||(loan?"Repayment: "+loan.name:t.category)||"Spending";sub=jarName(t.jar)+(t.category&&t.note?" · "+t.category:"")+" · "+d;cls="out";sign="−";color=COLORS[jarIdx(t.jar)];}
     if(t.kind==="add"){title=t.note||"Money added";sub=jarName(t.jar)+" · "+d;cls="in";sign="+";color=COLORS[jarIdx(t.jar)];}
     if(t.kind==="move"){title="Moved "+jarName(t.from)+" → "+jarName(t.to);sub=d;}
@@ -854,13 +912,13 @@ function submit(form,build,ok){
 }
 submit($("f-payday"),()=>{
   const a=num($("pd-amt").value),d=$("pd-date").value||today();
-  if(a<=0)return "Enter the salary you received.";
+  if(a<=0)return "Enter the income you received.";
   if(Math.abs(pctTotal()-100)>=0.01)return "Jars must total 100% first.";
   const already=txs.some(t=>t.kind==="payday"&&monthOf(t.date)===monthOf(d));
   if(already&&!$("pd-go").dataset.confirm){$("pd-go").dataset.confirm="1";$("pd-go").textContent="Tap again to record a second payday";setTimeout(()=>{$("pd-go").dataset.confirm="";$("pd-go").textContent="Split into jars"},4000);return "Payday for "+monthName(monthOf(d))+" is already recorded.";}
   $("pd-go").dataset.confirm="";$("pd-go").textContent="Split into jars";
   return {kind:"payday",date:d,amount:a,alloc:splitAmount(a),note:""};
-},r=>{setTimeout(()=>{if(typeof startConfetti==="function")startConfetti()},120);return "Done. TZS "+fmt(r.amount)+" split into your jars. Now move the money to match.";});
+},r=>{setTimeout(()=>{if(typeof startConfetti==="function")startConfetti()},120);setTimeout(()=>{if($("celebrate").hidden&&typeof promptFund==="function")promptFund()},700);return "Done. TZS "+fmt(r.amount)+" split into your jars. Now move the money to match.";});
 submit($("f-spend"),()=>{
   const a=num($("sp-amt").value),jar=$("sp-jar").value;if(a<=0)return "Enter how much you spent.";
   const t={kind:"spend",date:$("sp-date").value||today(),amount:a,jar,note:$("sp-note").value.trim()};
@@ -1128,7 +1186,7 @@ function achList(bal){
   const essPct=(settings.jars.find(j=>j.id==="ess")||{}).pct||0;
   const essBudget=(settings.salary||0)*essPct/100;
   const def=[
-    ["first-pay","🌱","First payday","Split your first salary into jars",payCount>=1],
+    ["first-pay","🌱","First payday","Split your first income into jars",payCount>=1],
     ["save-100k","💰","100K club","Reach TZS 100,000 saved",s.saved>=1e5,s.saved,1e5],
     ["save-500k","💎","Half a million","Reach TZS 500,000 saved",s.saved>=5e5,s.saved,5e5],
     ["save-1m","🏆","Millionaire jar","Reach TZS 1,000,000 saved",s.saved>=1e6,s.saved,1e6],
@@ -1140,6 +1198,7 @@ function achList(bal){
     ["streak-12","👑","Year of discipline","12-month saving streak",streak>=12,streak,12],
     ["consistent","📒","Consistent","Track money in 3 months",monthsLogged>=3,monthsLogged,3],
     ["net-green","📈","In the green","Net worth above zero",s.net>0&&payCount>=1],
+    ["inviter","💌","Spread the word","Invite a friend to Salary Jars",(game.invites||0)>=1],
   ];
   return def.map(a=>({id:a[0],icon:a[1],title:a[2],desc:a[3],done:!!a[4],cur:a[5],goal:a[6]}));
 }
@@ -1266,7 +1325,8 @@ function buildWrapped(m){
     x.textAlign="right";x.fillStyle="#eef6f3";x.fillText(r[1],W-80,yy);
     x.strokeStyle="rgba(255,255,255,.08)";x.lineWidth=2;x.beginPath();x.moveTo(80,yy+32);x.lineTo(W-80,yy+32);x.stroke();yy+=104;});
   x.textAlign="left";x.fillStyle="#3cc4ae";x.font="700 46px Sora,sans-serif";x.fillText("Salary Jars",80,H-92);
-  x.fillStyle="#9cb8b1";x.font="500 30px 'IBM Plex Sans',sans-serif";x.fillText("Split your salary. Watch it grow.",80,H-46);
+  x.fillStyle="#9cb8b1";x.font="500 30px 'IBM Plex Sans',sans-serif";x.fillText("Split your income. Watch it grow.",80,H-58);
+  x.fillStyle="#3cc4ae";x.font="600 28px 'IBM Plex Mono',monospace";x.fillText("befa1921.github.io/jars",80,H-20);
   return c;
 }
 async function shareWrapped(m){
@@ -1310,6 +1370,72 @@ $("set-remind").addEventListener("change",async()=>{
   game.remind=$("set-remind").checked?1:0;saveLocal();renderNudge();
   if(game.remind&&"Notification"in window&&Notification.permission==="default"){try{await Notification.requestPermission()}catch(e){}}
 });
+
+/* ---------- onboarding ---------- */
+const OB_PRESETS=[["Balanced","55,5,10,15,15"],["Starter","65,5,10,10,10"],["No debt","55,5,0,20,20"]];
+let obSplit="55,5,10,15,15";
+function obShow(step){document.querySelectorAll("#onboard .ob-step").forEach(el=>el.hidden=el.dataset.s!==String(step))}
+function maybeOnboard(){
+  if(game.onboarded||txs.length){$("onboard").hidden=true;return;}
+  $("onboard").hidden=false;obShow(1);$("ob-salary").value=settings.salary?fmt(settings.salary):"";
+}
+function obRenderPresets(){
+  const box=$("ob-presets");box.innerHTML="";
+  OB_PRESETS.forEach(([name,p])=>{const b=document.createElement("button");b.type="button";b.className="ob-preset"+(p===obSplit?" on":"");
+    b.innerHTML="<b></b><small>"+p.split(",").join(" / ")+"</small>";b.querySelector("b").textContent=name;
+    b.addEventListener("click",()=>{obSplit=p;obRenderPresets();obRenderSplit()});box.appendChild(b)});
+}
+function obRenderSplit(){
+  const pcts=obSplit.split(",").map(Number),box=$("ob-split");box.innerHTML="";
+  settings.jars.forEach((j,i)=>{const r=document.createElement("div");r.className="ob-row";
+    r.innerHTML=`<span class="chip" style="--c:${COLORS[i]}"></span><span></span><b>${pcts[i]}%</b>`;
+    r.querySelector("span:nth-child(2)").textContent=j.name;box.appendChild(r)});
+}
+$("ob-1next").addEventListener("click",()=>{const s=num($("ob-salary").value);if(s<=0){$("ob-salary").focus();return;}
+  settings.salary=s;obRenderPresets();obRenderSplit();obShow(2)});
+$("ob-back").addEventListener("click",()=>obShow(1));
+$("ob-2next").addEventListener("click",()=>{const pcts=obSplit.split(",").map(Number);
+  settings.jars=settings.jars.map((j,i)=>({id:j.id,name:j.name,pct:pcts[i]}));obShow(3)});
+function obFinish(recordPay){
+  game.onboarded=1;settings.jars=settings.jars.slice();saveSettings(settings);settings=JSON.parse(JSON.stringify(settings));
+  $("onboard").hidden=true;
+  if(recordPay){addTx({kind:"payday",date:today(),amount:settings.salary,alloc:splitAmount(settings.salary),note:""});
+    setTimeout(()=>{if(typeof startConfetti==="function")startConfetti()},200);}
+  else{saveLocal();render();}
+}
+$("ob-pay").addEventListener("click",()=>obFinish(true));
+$("ob-skip").addEventListener("click",()=>obFinish(false));
+
+/* ---------- invite loop ---------- */
+function invite(){
+  const url="https://befa1921.github.io/jars/";
+  const msg="I'm using Salary Jars to split my income and actually save money 💰 It's free, works offline, no sign-up. Try it: "+url;
+  game.invites=(game.invites||0)+1;saveLocal();render();
+  if(navigator.share)navigator.share({text:msg,url}).catch(()=>{});
+  else window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+$("rw-invite").addEventListener("click",invite);
+$("set-invite").addEventListener("click",invite);
+
+/* ---------- payday goal-funding nudge ---------- */
+function promptFund(){
+  const due=goals.filter(g=>{const need=goalPlan(g),left=g.target-goalSaved(g);
+    return need>0&&left>0&&goalSetAside(g,monthOf(today()))<need;});
+  if(!due.length)return;
+  const box=$("fgList");box.innerHTML="";
+  due.forEach(g=>{const need=goalPlan(g),already=goalSetAside(g,monthOf(today())),amt=Math.max(1,need-already);
+    const row=document.createElement("div");row.className="ach on";
+    row.innerHTML=`<div class="ic">🎯</div><div class="ach-main"><b></b><small>Plan: ${fmt(need)}/mo</small></div>`;
+    row.querySelector("b").textContent=g.name;
+    const b=document.createElement("button");b.className="small-btn";b.textContent="Set aside "+short(amt);
+    b.addEventListener("click",async()=>{b.disabled=true;
+      try{await addTx({kind:"goal",goal:g.id,jar:g.jar,amount:amt,date:today(),note:""});b.textContent="Done ✓";}
+      catch(e){b.disabled=false;}});
+    row.appendChild(b);box.appendChild(row);});
+  $("fundGoals").hidden=false;
+}
+$("fgClose").addEventListener("click",()=>$("fundGoals").hidden=true);
+$("fundGoals").addEventListener("click",e=>{if(e.target.id==="fundGoals")$("fundGoals").hidden=true});
 
 /* ---------- install & offline ---------- */
 let deferredPrompt=null;
